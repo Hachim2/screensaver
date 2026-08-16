@@ -10,7 +10,7 @@ int main() {
         if (GetLastInputInfo(&lii)) {
             DWORD current_time = GetTickCount();
             DWORD inactivity_period = current_time - lii.dwTime;
-            printf("Inactivite : %lu ms\n", inactivity_period);
+            printf("Inactivity : %lu ms\n", inactivity_period);
         }
         Sleep(1000);
     } while (GetTickCount() - start_time < 30000);
