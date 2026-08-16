@@ -4,13 +4,16 @@
 int main() {
     LASTINPUTINFO lii;
     lii.cbSize = sizeof(LASTINPUTINFO);
+    DWORD start_time = GetTickCount();
 
-    if (GetLastInputInfo(&lii)) {
-        DWORD dwGetTickCount = GetTickCount();
-        DWORD idleTime = dwGetTickCount - lii.dwTime;
-        printf("Inactivité : %lu ms\n", idleTime);
-    } else {
-        printf("Erreur lors de l'appel\n");
-    }
+    do {
+        if (GetLastInputInfo(&lii)) {
+            DWORD current_time = GetTickCount();
+            DWORD inactivity_period = current_time - lii.dwTime;
+            printf("Inactivite : %lu ms\n", inactivity_period);
+        }
+        Sleep(1000);
+    } while (GetTickCount() - start_time < 30000);
+    printf("OK\n");
     return 0;
 }
