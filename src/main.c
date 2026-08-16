@@ -1,154 +1,53 @@
-// Inclure raylib uniquement (pas de conflits !)
-#include "raylib.h"
+﻿#include "raylib.h"
 #include "inactivity.h"
 #include "video.h"
 
 #include <stdio.h>
 #include <stdint.h>
 
-int main()
-{
-    while (1)
-    {
-        // =========================================================
-        // Vérification de l'inactivité
-        // =========================================================
-
+int main() {
+    while (1) {
         uint32_t inactivity = get_inactivity_time();
-
-        printf(
-            "Inactivité : %lu ms\n",
-            (unsigned long)inactivity
-        );
-
-        // Ta fonction personnalisée
+        printf("Inactivité : %lu ms\n", (unsigned long)inactivity);
         wait_ms(1000);
 
-
-        // =========================================================
-        // Lancer le screensaver après 10 secondes
-        // =========================================================
-
-        if (inactivity >= 10000)
-        {
-            SetConfigFlags(
-                FLAG_WINDOW_UNDECORATED
-            );
-
-            InitWindow(
-                GetMonitorWidth(0),
-                GetMonitorHeight(0),
-                "Screensaver - Ma fenêtre Raylib"
-            );
-
+        if (inactivity >= 10000) {
+            SetConfigFlags(FLAG_WINDOW_UNDECORATED);
+            InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "Screensaver - Ma fenêtre Raylib");
             SetTargetFPS(60);
 
-
-            // =====================================================
-            // Initialisation vidéo
-            // =====================================================
-
             Video video;
+            float fade_alpha = 0.0f;
 
-            if (!Video_Init(&video,"..\\videos\\spidyxvenom.mp4",GetMonitorWidth(0),GetMonitorHeight(0))){
+            if (!Video_Init(&video, "..\\videos\\the_passage.mp4", GetMonitorWidth(0), GetMonitorHeight(0))) {
                 CloseWindow();
                 return 1;
             }
 
+            while (!WindowShouldClose()){
+                if (GetKeyPressed() == 0){
+                    // Le fondu dure environ 0,5 seconde
+                    fade_alpha += GetFrameTime() * 0.16f;
 
-            // =====================================================
-            // Boucle du screensaver
-            // =====================================================
-
-            while (!WindowShouldClose())
-            {
-                // -------------------------------------------------
-                // Détection d'une interaction utilisateur
-                // -------------------------------------------------
-
-                if (GetKeyPressed() == 0)
-                {
-                    // -------------------------------------------------
-                    // Mise à jour de la vidéo
-                    // -------------------------------------------------
-
-                    Video_Update(&video);
-
-
-                    // -------------------------------------------------
-                    // Début du rendu
-                    // -------------------------------------------------
+                    if (fade_alpha > 1.0f)
+                        fade_alpha = 1.0f;
 
                     BeginDrawing();
 
                     ClearBackground(BLACK);
 
+                    Video_Update(&video);
 
-                    // -------------------------------------------------
-                    // Mesure du rendu
-                    // -------------------------------------------------
-
-                    double draw_start =
-                        GetTime();
-
-                    Video_Draw(&video);
-
-                    double draw_time =
-                        (GetTime() - draw_start) * 1000.0;
-
-
-                    // -------------------------------------------------
-                    // Profiling
-                    // -------------------------------------------------
-
-                    static int profile_counter = 0;
-
-                    profile_counter++;
-
-                    if (profile_counter >= 60)
-                    {
-                        printf(
-                            "\n========== PROFILING ==========\n"
-                            "Resolution : %dx%d\n"
-                            "FPS vidéo : %.2f\n"
-                            "Taille frame : %.2f MB\n"
-                            "DrawTexturePro : %.3f ms\n"
-                            "================================\n",
-
-                            video.width,
-                            video.height,
-
-                            video.fps,
-
-                            (double)video.frame_size /
-                            (1024.0 * 1024.0),
-
-                            draw_time
-                        );
-
-                        profile_counter = 0;
-                    }
-
+                    Video_Draw(&video, fade_alpha);
 
                     EndDrawing();
                 }
-                else
-                {
-                    // -------------------------------------------------
-                    // Interaction utilisateur
-                    // -------------------------------------------------
-
+                else{
                     break;
                 }
             }
 
-
-            // =========================================================
-            // Nettoyage
-            // =========================================================
-
             Video_Close(&video);
-
             CloseWindow();
         }
     }
