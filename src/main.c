@@ -8,12 +8,12 @@
 int main() {
     while (1) {
         uint32_t inactivity = get_inactivity_time();
-        printf("Inactivité : %lu ms\n", (unsigned long)inactivity);
+        printf("Inactivity : %lu ms\n", (unsigned long)inactivity);
         wait_ms(1000);
 
         if (inactivity >= 10000) {
             SetConfigFlags(FLAG_WINDOW_UNDECORATED);
-            InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "Screensaver - Ma fenêtre Raylib");
+            InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "Screensaver");
             SetTargetFPS(60);
 
             Video video;
@@ -26,7 +26,7 @@ int main() {
 
             while (!WindowShouldClose()){
                 if (GetKeyPressed() == 0){
-                    // Le fondu dure environ 0,5 seconde
+                    //The fade : 1/sec wished
                     fade_alpha += GetFrameTime() * 0.16f;
 
                     if (fade_alpha > 1.0f)

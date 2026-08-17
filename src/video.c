@@ -22,13 +22,7 @@ bool Video_Init(Video *video, const char *filename, int width, int height) {
     char probe_cmd[2048];
     char probe_output[256] = {0};
 
-    snprintf(
-        probe_cmd,
-        sizeof(probe_cmd),
-        "cmd /c \"\"%s\" -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate -of csv=s=x:p=0 \"%s\"\"",
-        FFPROBE_PATH,
-        filename
-    );
+    snprintf(probe_cmd,sizeof(probe_cmd),"cmd /c \"\"%s\" -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate -of csv=s=x:p=0 \"%s\"\"",FFPROBE_PATH,filename);
 
     printf("Commande FFprobe : %s\n", probe_cmd);
 
@@ -135,7 +129,7 @@ bool Video_Init(Video *video, const char *filename, int width, int height) {
     video->buffer = malloc(video->frame_size);
 
     if (video->buffer == NULL) {
-        TraceLog(LOG_ERROR, "Impossible d'allouer le buffer vidéo");
+        TraceLog(LOG_ERROR, "Unable to allocate the video buffer");
         return false;
     }
 
@@ -151,7 +145,7 @@ bool Video_Init(Video *video, const char *filename, int width, int height) {
         video->height
     );
 
-    printf("Commande FFmpeg : %s\n", command);
+    printf("FFmpeg Command : %s\n", command);
 
     video->pipe = _popen(command, "rb");
 
