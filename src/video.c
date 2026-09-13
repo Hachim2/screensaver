@@ -12,8 +12,9 @@
 #define FFPROBE_PATH "ffprobe.exe"
 #endif
 
-#define MAX_VIDEO_WIDTH  2560
-#define MAX_VIDEO_HEIGHT 1440
+// "Fluid" profile: limits the raw FFmpeg -> RAM -> GPU transfer.
+#define MAX_DECODE_WIDTH  1920
+#define MAX_DECODE_HEIGHT 1080
 
 bool Video_Init(Video *video, const char *filename, int width, int height) {
     memset(video, 0, sizeof(Video));
@@ -63,66 +64,21 @@ bool Video_Init(Video *video, const char *filename, int width, int height) {
     int screen_width = width > 0 ? width : 1920;
     int screen_height = height > 0 ? height : 1080;
 
-    // =========================================================
-    // Résolution maximale de décodage
-    // =========================================================
+    // Keep the decoded image within the fluid profile while preserving the
+    // screen aspect ratio. Raylib enlarges it only for the final display.
+    double scale_x = (double)MAX_DECODE_WIDTH / (double)screen_width;
+    double scale_y = (double)MAX_DECODE_HEIGHT / (double)screen_height;
+    double scale = scale_x < scale_y ? scale_x : scale_y;
 
-    int max_width = screen_width;
-    int max_height = screen_height;
+    if (scale > 1.0) scale = 1.0;
 
-    // On limite la résolution envoyée par FFmpeg
-    if (max_width > MAX_VIDEO_WIDTH)
-        max_width = MAX_VIDEO_WIDTH;
+    video->width = (int)(screen_width * scale);
+    video->height = (int)(screen_height * scale);
 
-    if (max_height > MAX_VIDEO_HEIGHT)
-        max_height = MAX_VIDEO_HEIGHT;
-
-
-    // =========================================================
-    // Calcul du scaling en conservant le ratio
-    // =========================================================
-
-    double scale_x =
-        (double)max_width / (double)video->source_width;
-
-    double scale_y =
-        (double)max_height / (double)video->source_height;
-
-    double scale =
-        scale_x < scale_y ? scale_x : scale_y;
-
-    // Ne jamais agrandir la vidéo
-    if (scale > 1.0)
-        scale = 1.0;
-
-
-    video->width = (int)(video->source_width * scale);
-
-    video->height = (int)(video->source_height * scale);
-
-
-    // Dimensions paires pour FFmpeg
-    video->width &= ~1;
-    video->height &= ~1;
-
-    video->width &= ~1;
-    video->height &= ~1;
-
-    if (video->width < 2)
-        video->width = 2;
-
-    if (video->height < 2)
-        video->height = 2;
+    if (video->width < 1) video->width = 1;
+    if (video->height < 1) video->height = 1;
 
     printf("Resolution source : %dx%d\n", video->source_width, video->source_height);
-    printf("Resolution de sortie : %dx%d\n", video->width, video->height);
-
-    if (video->width < 1)
-        video->width = 1;
-
-    if (video->height < 1)
-        video->height = 1;
-
     printf("Resolution de sortie : %dx%d\n", video->width, video->height);
 
     video->frame_size = video->width * video->height * 4;
@@ -138,9 +94,11 @@ bool Video_Init(Video *video, const char *filename, int width, int height) {
     snprintf(
         command,
         sizeof(command),
-        "cmd /c \"\"%s\" -stream_loop -1 -hide_banner -loglevel error -i \"%s\" -vf \"scale=%d:%d:force_original_aspect_ratio=decrease\" -f rawvideo -pix_fmt rgba -an -\"",
+        "cmd /c \"\"%s\" -stream_loop -1 -hide_banner -loglevel fatal -hwaccel auto -i \"%s\" -vf \"scale=%d:%d:force_original_aspect_ratio=increase:force_divisible_by=2:reset_sar=1:flags=lanczos+accurate_rnd+full_chroma_int,crop=%d:%d,format=rgba\" -f rawvideo -pix_fmt rgba -an -\"",
         FFMPEG_PATH,
         filename,
+        video->width,
+        video->height,
         video->width,
         video->height
     );
@@ -247,31 +205,7 @@ bool Video_Update(Video *video) {
 void Video_Draw(Video *video, float alpha) {
     float screen_width = (float)GetScreenWidth();
     float screen_height = (float)GetScreenHeight();
-    float video_width = (float)video->width;
-    float video_height = (float)video->height;
-    float video_ratio = video_width / video_height;
-    float screen_ratio = screen_width / screen_height;
-
-    Rectangle source;
-
-    if (video_ratio > screen_ratio) {
-        float visible_width = video_height * screen_ratio;
-        source = (Rectangle){
-            (video_width - visible_width) / 2.0f,
-            0,
-            visible_width,
-            video_height
-        };
-    } else {
-        float visible_height = video_width / screen_ratio;
-        source = (Rectangle){
-            0,
-            (video_height - visible_height) / 2.0f,
-            video_width,
-            visible_height
-        };
-    }
-
+    Rectangle source = {0, 0, (float)video->width, (float)video->height};
     Rectangle destination = {0, 0, screen_width, screen_height};
     DrawTexturePro(video->texture, source, destination, (Vector2){0, 0}, 0.0f, Fade(WHITE, alpha));
 }

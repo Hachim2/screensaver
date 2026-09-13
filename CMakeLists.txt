@@ -148,4 +148,5 @@ target_link_libraries(main raylib)
 target_compile_definitions(main PRIVATE
     FFMPEG_PATH="${FFMPEG_EXECUTABLE}"
     FFPROBE_PATH="${FFPROBE_EXECUTABLE}"
+    VIDEO_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/videos"
 )
